@@ -38,6 +38,9 @@ public class ShiftyFetchMojo
   @Parameter(defaultValue = "${repositorySystemSession}", readonly = true)
   private RepositorySystemSession session;
 
+  /**
+   * The artifacts to download group:artifact:version[:classifier[:extension]]
+   */
   @Parameter(required = true)
   private List<String> artifacts;
 
@@ -53,6 +56,12 @@ public class ShiftyFetchMojo
   @Parameter(defaultValue = "false")
   private Boolean includeSnapshots = false;
 
+  /**
+   * If the downloaded artifacts should be unpacked
+   */
+  @Parameter(defaultValue = "false")
+  private Boolean unpack = false;
+
   @Parameter(defaultValue = "${project.build.directory}/shifty", required = true)
   private File outputDirectory;
 
@@ -60,15 +69,24 @@ public class ShiftyFetchMojo
   public void execute() throws MojoExecutionException, MojoFailureException {
     outputDirectory.mkdirs();
 
-    log("resolving %s", artifacts);
     artifacts
       .parallelStream()
-      .map(gav -> new DefaultArtifact(gav))
+      .map(this::parseCoordinates)
       .map(this::lookupArtifact)
       .forEach(this::copyArtifact);
   }
 
+  DefaultArtifact parseCoordinates(String gav) {
+    String[] c = gav.split(":");
+    return new DefaultArtifact(c[0],
+      c[1],
+      c.length >= 4 ? c[3] : null,
+      c.length == 5 ? c[4] : "jar",
+      c[2]);
+  }
+
   Artifact lookupArtifact(DefaultArtifact artifact) {
+    log("resolving %s", artifact);
     Version version = highestVersion(artifact);
     String propertyName = artifact.getArtifactId() + ".version";
     project.getProperties().setProperty(propertyName, version.toString());
@@ -85,11 +103,17 @@ public class ShiftyFetchMojo
 
   void copyArtifact(Artifact artifact) {
     try {
-      Files.copy(artifact.getFile().toPath(), new FileOutputStream(new File(outputDirectory, artifact.getFile().getName())));
+      if (unpack)
+        unpack(artifact.getFile());
+      else
+        Files.copy(artifact.getFile().toPath(), new FileOutputStream(new File(outputDirectory, artifact.getFile().getName())));
     }
     catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private void unpack(File file) {
   }
 
   private ArtifactResult resolve(ArtifactRequest request) {
