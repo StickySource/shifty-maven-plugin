@@ -15,6 +15,9 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.archiver.UnArchiver;
+import org.codehaus.plexus.archiver.manager.ArchiverManager;
+import org.codehaus.plexus.archiver.manager.NoSuchArchiverException;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
@@ -65,6 +68,9 @@ public class ShiftyFetchMojo
   @Parameter(defaultValue = "${project.build.directory}/shifty", required = true)
   private File outputDirectory;
 
+  @Component
+  private ArchiverManager archiverManager;
+
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
     outputDirectory.mkdirs();
@@ -104,7 +110,7 @@ public class ShiftyFetchMojo
   void copyArtifact(Artifact artifact) {
     try {
       if (unpack)
-        unpack(artifact.getFile());
+        unpack(artifact);
       else
         Files.copy(artifact.getFile().toPath(), new FileOutputStream(new File(outputDirectory, artifact.getFile().getName())));
     }
@@ -113,7 +119,20 @@ public class ShiftyFetchMojo
     }
   }
 
-  private void unpack(File file) {
+  private void unpack(Artifact artifact) {
+
+    try {
+      UnArchiver unArchiver = archiverManager.getUnArchiver(artifact.getFile());
+      getLog().debug("Found unArchiver by type: " + unArchiver);
+      unArchiver.setIgnorePermissions(true);
+      unArchiver.setSourceFile(artifact.getFile());
+      unArchiver.setDestDirectory(outputDirectory);
+      unArchiver.extract();
+    }
+    catch (NoSuchArchiverException e) {
+      throw new RuntimeException(e);
+    }
+
   }
 
   private ArtifactResult resolve(ArtifactRequest request) {
