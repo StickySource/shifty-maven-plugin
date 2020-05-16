@@ -1,14 +1,9 @@
  pipeline {
 
-    agent any
-
-    tools {
-        maven "Maven"
-    }
-
-    options {
-        timestamps()
-        ansiColor("xterm")
+    agent {
+      docker { 
+        image 'maven:3.6.3-openjdk-14-slim'
+      }
     }
 
     stages {
