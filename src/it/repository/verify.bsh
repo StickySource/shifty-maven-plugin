@@ -1,0 +1,11 @@
+import java.io.*;
+import java.util.*;
+
+import org.codehaus.plexus.util.*;
+
+File pomFile = new File( basedir, "target/shifty/net/stickycode/sticky-coercion/2.7/sticky-coercion-2.7.jar" );
+System.out.println( "Checking for existence of first test file: " + pomFile );
+if (!pomFile.exists())
+  throw new RuntimeException(pomFile.toString() + " not found" );
+
+return true;

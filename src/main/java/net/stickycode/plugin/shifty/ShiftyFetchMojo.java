@@ -68,13 +68,14 @@ public class ShiftyFetchMojo
   @Parameter(defaultValue = "${project.build.directory}/shifty", required = true)
   private File outputDirectory;
 
+  @Parameter(defaultValue = "Folder", required = true)
+  private OutputDirectoryFormat outputDirectoryFormat = OutputDirectoryFormat.Folder;
+
   @Component
   private ArchiverManager archiverManager;
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
-    outputDirectory.mkdirs();
-
     artifacts
       .parallelStream()
       .map(this::parseCoordinates)
@@ -92,10 +93,10 @@ public class ShiftyFetchMojo
   }
 
   Artifact lookupArtifact(DefaultArtifact artifact) {
-    log("resolving %s", artifact);
     Version version = highestVersion(artifact);
     String propertyName = artifact.getArtifactId() + ".version";
     project.getProperties().setProperty(propertyName, version.toString());
+    log("resolved %s to %s", artifact, version.toString());
 
     DefaultArtifact fetch = new DefaultArtifact(
       artifact.getGroupId(),
@@ -112,11 +113,33 @@ public class ShiftyFetchMojo
       if (unpack)
         unpack(artifact);
       else
-        Files.copy(artifact.getFile().toPath(), new FileOutputStream(new File(outputDirectory, artifact.getFile().getName())));
+        Files.copy(artifact.getFile().toPath(),
+          new FileOutputStream(new File(outputDirectory(artifact), artifact.getFile().getName())));
     }
     catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private File outputDirectory(Artifact artifact) {
+    switch (outputDirectoryFormat) {
+      case Folder:
+        outputDirectory.mkdirs();
+        log("downloading %s to folder %s", artifact, outputDirectory);
+        return outputDirectory;
+
+      case Repository:
+        File repositoryPath = new File(outputDirectory, gavPath(artifact));
+        repositoryPath.mkdirs();
+        log("downloading %s to repository %s", artifact, repositoryPath);
+        return repositoryPath;
+      default:
+        throw new RuntimeException("Unknown output directory formant " + outputDirectoryFormat);
+    }
+  }
+
+  private String gavPath(Artifact artifact) {
+    return artifact.getGroupId().replace('.', '/') + "/" + artifact.getArtifactId() + "/" + artifact.getVersion();
   }
 
   private void unpack(Artifact artifact) {
@@ -126,7 +149,7 @@ public class ShiftyFetchMojo
       getLog().debug("Found unArchiver by type: " + unArchiver);
       unArchiver.setIgnorePermissions(true);
       unArchiver.setSourceFile(artifact.getFile());
-      unArchiver.setDestDirectory(outputDirectory);
+      unArchiver.setDestDirectory(outputDirectory(artifact));
       unArchiver.extract();
     }
     catch (NoSuchArchiverException e) {
