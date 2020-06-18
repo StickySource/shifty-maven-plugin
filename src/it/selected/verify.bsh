@@ -1,0 +1,18 @@
+import java.io.File;
+
+File file = new File( basedir, "target/shifty/META-INF/MANIFEST.MF");
+System.out.println( "Check manifest file is not included: " + file );
+if (file.exists())
+  throw new RuntimeException(file2.toString() + " should not be found its not included" );
+
+File file2 = new File( basedir, "target/shifty/net/stickycode/coercion/CollectionCoercionDoesNotHaveAnAppriateMappingException.java");
+System.out.println( "Check excluded file is not found: " + file2 );
+if (file2.exists())
+  throw new RuntimeException(file2.toString() + " should not be found" );
+
+File file3 = new File( basedir, "target/shifty/net/stickycode/coercion/StringCoercion.java");
+System.out.println( "Check included file exists: " + file3 );
+if (!file3.exists())
+  throw new RuntimeException(file3.toString() + " not found" );
+
+return true;
