@@ -1,7 +1,4 @@
-import java.io.*;
-import java.util.*;
-
-import org.codehaus.plexus.util.*;
+import java.io.File;
 
 File pomFile = new File( basedir, "target/shifty/net/stickycode/sticky-coercion/2.7/sticky-coercion-2.7.jar" );
 System.out.println( "Checking for existence of first test file: " + pomFile );

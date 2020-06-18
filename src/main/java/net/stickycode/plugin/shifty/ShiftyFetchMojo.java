@@ -18,6 +18,8 @@ import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.archiver.UnArchiver;
 import org.codehaus.plexus.archiver.manager.ArchiverManager;
 import org.codehaus.plexus.archiver.manager.NoSuchArchiverException;
+import org.codehaus.plexus.components.io.fileselectors.FileSelector;
+import org.codehaus.plexus.components.io.fileselectors.IncludeExcludeFileSelector;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
@@ -67,6 +69,12 @@ public class ShiftyFetchMojo
 
   @Parameter(defaultValue = "${project.build.directory}/shifty", required = true)
   private File outputDirectory;
+
+  @Parameter
+  private String[] includes;
+
+  @Parameter
+  private String[] excludes;
 
   @Parameter(defaultValue = "Folder", required = true)
   private OutputDirectoryFormat outputDirectoryFormat = OutputDirectoryFormat.Folder;
@@ -148,6 +156,7 @@ public class ShiftyFetchMojo
       UnArchiver unArchiver = archiverManager.getUnArchiver(artifact.getFile());
       getLog().debug("Found unArchiver by type: " + unArchiver);
       unArchiver.setIgnorePermissions(true);
+      unArchiver.setFileSelectors(selectors());
       unArchiver.setSourceFile(artifact.getFile());
       unArchiver.setDestDirectory(outputDirectory(artifact));
       unArchiver.extract();
@@ -156,6 +165,16 @@ public class ShiftyFetchMojo
       throw new RuntimeException(e);
     }
 
+  }
+
+  private FileSelector[] selectors() {
+    if (excludes == null && includes == null)
+      return null;
+
+    IncludeExcludeFileSelector[] selectors = new IncludeExcludeFileSelector[] { new IncludeExcludeFileSelector() };
+    selectors[0].setExcludes(excludes);
+    selectors[0].setIncludes(includes);
+    return selectors;
   }
 
   private ArtifactResult resolve(ArtifactRequest request) {
