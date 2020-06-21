@@ -76,6 +76,9 @@ public class ShiftyFetchMojo
   @Parameter
   private String[] excludes;
 
+  @Parameter
+  private FileMappers filemappers = new FileMappers();
+
   @Parameter(defaultValue = "Folder", required = true)
   private OutputDirectoryFormat outputDirectoryFormat = OutputDirectoryFormat.Folder;
 
@@ -157,6 +160,7 @@ public class ShiftyFetchMojo
       getLog().debug("Found unArchiver by type: " + unArchiver);
       unArchiver.setIgnorePermissions(true);
       unArchiver.setFileSelectors(selectors());
+      unArchiver.setFileMappers(filemappers.build());
       unArchiver.setSourceFile(artifact.getFile());
       unArchiver.setDestDirectory(outputDirectory(artifact));
       unArchiver.extract();
