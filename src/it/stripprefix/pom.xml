@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>net.stickycode.plugins.it</groupId>
-  <artifactId>shifty-maven-plugin-unpack-selected</artifactId>
+  <artifactId>shifty-maven-plugin-stripprefix</artifactId>
   <version>1.1-SNAPSHOT</version>
   <packaging>pom</packaging>
 
@@ -29,6 +29,11 @@
               <excludes>
                 <exclude>**/*Exception.java</exclude>
               </excludes>
+              <filemappers>
+                <stripprefixes>
+                  <stripprefix>net/stickycode/</stripprefix>
+                </stripprefixes>
+              </filemappers>
               <artifacts>
                 <artifact>net.stickycode:sticky-coercion:[2.1,3):sources:jar</artifact>
               </artifacts>
