@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -27,7 +28,6 @@ import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
-import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.resolution.VersionRangeRequest;
 import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.eclipse.aether.resolution.VersionRangeResult;
@@ -36,6 +36,35 @@ import org.eclipse.aether.version.Version;
 @Mojo(name = "fetch", threadSafe = true, defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
 public class ShiftyFetchMojo
     extends AbstractMojo {
+
+  private final class VersionImplementation
+      implements Version {
+
+    private String version;
+
+    private VersionImplementation() {
+    }
+
+    public VersionImplementation withVersion(Artifact artifact) {
+      this.version = artifact.getVersion();
+      return this;
+    }
+
+    public VersionImplementation withRange(Artifact artifact) {
+      this.version = artifact.getVersion().substring(1, artifact.getVersion().length() - 1);
+      return this;
+    }
+
+    @Override
+    public int compareTo(Version o) {
+      return o.toString().compareTo(version);
+    }
+
+    @Override
+    public String toString() {
+      return version;
+    }
+  }
 
   /**
    * The current repository/network configuration of Maven.
@@ -60,6 +89,9 @@ public class ShiftyFetchMojo
 
   @Parameter(defaultValue = "false")
   private Boolean includeSnapshots = false;
+
+  @Parameter(defaultValue = "false")
+  private Boolean assumeSnapshotsAreLocal = false;
 
   /**
    * If the downloaded artifacts should be unpacked
@@ -90,7 +122,8 @@ public class ShiftyFetchMojo
     artifacts
       .parallelStream()
       .map(this::parseCoordinates)
-      .map(this::lookupArtifact)
+      .map(this::findArtifact)
+      .map(this::resolveArtifactRequest)
       .forEach(this::copyArtifact);
   }
 
@@ -103,10 +136,10 @@ public class ShiftyFetchMojo
       c[2]);
   }
 
-  Artifact lookupArtifact(DefaultArtifact artifact) {
+  ArtifactRequest findArtifact(DefaultArtifact artifact) {
     Version version = highestVersion(artifact);
     String propertyName = artifact.getArtifactId() + ".version";
-    project.getProperties().setProperty(propertyName, version.toString());
+    getProjectProperties().setProperty(propertyName, version.toString());
     log("resolved %s to %s", artifact, version.toString());
 
     DefaultArtifact fetch = new DefaultArtifact(
@@ -115,8 +148,20 @@ public class ShiftyFetchMojo
       artifact.getClassifier(),
       artifact.getExtension(),
       version.toString());
-    ArtifactRequest request = new ArtifactRequest(fetch, repositories, null);
-    return resolve(request).getArtifact();
+    return new ArtifactRequest(fetch, repositories, null);
+  }
+
+  Properties getProjectProperties() {
+    return project.getProperties();
+  }
+
+  Artifact resolveArtifactRequest(ArtifactRequest request) {
+    try {
+      return repository.resolveArtifact(session, request).getArtifact();
+    }
+    catch (ArtifactResolutionException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   void copyArtifact(Artifact artifact) {
@@ -181,20 +226,19 @@ public class ShiftyFetchMojo
     return selectors;
   }
 
-  private ArtifactResult resolve(ArtifactRequest request) {
-    try {
-      return repository.resolveArtifact(session, request);
-    }
-    catch (ArtifactResolutionException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
   private Version highestVersion(Artifact artifact) {
-    VersionRangeRequest request = new VersionRangeRequest(artifact, repositories, null);
-    VersionRangeResult v = resolve(request);
+    if (assumeSnapshotsAreLocal()) {
+      if (artifact.getVersion().endsWith("-SNAPSHOT"))
+        return new VersionImplementation().withVersion(artifact);
 
-    if (!includeSnapshots) {
+      if (artifact.getVersion().endsWith("-SNAPSHOT]") && artifact.getVersion().startsWith("["))
+        return new VersionImplementation().withRange(artifact);
+    }
+
+    VersionRangeRequest request = new VersionRangeRequest(artifact, repositories, null);
+    VersionRangeResult v = resolveRangeRequest(request);
+
+    if (ignoreSnapshots()) {
       List<Version> filtered = new ArrayList<Version>();
       for (Version aVersion : v.getVersions()) {
         if (!aVersion.toString().endsWith("SNAPSHOT")) {
@@ -212,7 +256,15 @@ public class ShiftyFetchMojo
     return v.getHighestVersion();
   }
 
-  private VersionRangeResult resolve(VersionRangeRequest request) {
+  boolean assumeSnapshotsAreLocal() {
+    return assumeSnapshotsAreLocal;
+  }
+
+  boolean ignoreSnapshots() {
+    return !includeSnapshots;
+  }
+
+  VersionRangeResult resolveRangeRequest(VersionRangeRequest request) {
     try {
       return repository.resolveVersionRange(session, request);
     }
