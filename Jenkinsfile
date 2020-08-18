@@ -3,6 +3,7 @@
     agent {
       docker { 
         image 'maven:3.6.3-openjdk-14-slim'
+        args '-v $HOME/.m2:/root/.m2'
       }
     }
 
