@@ -227,6 +227,10 @@ public class ShiftyFetchMojo
   }
 
   private Version highestVersion(Artifact artifact) {
+    // there is no need to look up a version for a fixed range
+    if (artifact.getVersion().matches("\\[[^,]*\\]"))
+      return new VersionImplementation().withRange(artifact);
+
     if (assumeSnapshotsAreLocal()) {
       if (artifact.getVersion().endsWith("-SNAPSHOT"))
         return new VersionImplementation().withVersion(artifact);

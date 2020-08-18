@@ -60,6 +60,7 @@ public class ShiftyFetchMojoComponentTest {
     checkNoSnapshots("5.6", "5.9", "5.9");
     checkNoSnapshots("5.6", "5.9", "5.6", "5.9");
     checkNoSnapshots("5.6", "6.10", "5.9", "5.6", "6.5", "6.10");
+    checkNoSnapshots("[5.6]", "5.6", "5.9", "5.6", "6.5", "6.10");
   }
 
   private void checkSnapshots(String givenVersion, String expectation, String... resolvedVersions) {
