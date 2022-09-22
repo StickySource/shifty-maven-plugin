@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.codehaus.plexus.components.io.filemappers.FileMapper;
 import org.codehaus.plexus.components.io.filemappers.FlattenFileMapper;
+import org.codehaus.plexus.components.io.filemappers.PrefixFileMapper;
 
 public class FileMappers {
 
@@ -12,17 +13,29 @@ public class FileMappers {
 
   private boolean flatten;
 
+  private String addprefix;
+
   public FileMapper[] build() {
     List<FileMapper> mappers = new ArrayList<>();
-    addStripPrefixes(mappers);
+    stripPrefixes(mappers);
 
     if (flatten)
       mappers.add(new FlattenFileMapper());
 
+    addPrefix(mappers);
+
     return mappers.toArray(new FileMapper[0]);
   }
 
-  private void addStripPrefixes(List<FileMapper> mappers) {
+  private void addPrefix(List<FileMapper> mappers) {
+    if (addprefix != null) {
+      PrefixFileMapper prefixMapper = new PrefixFileMapper();
+      prefixMapper.setPrefix(addprefix);
+      mappers.add(prefixMapper);
+    }
+  }
+
+  private void stripPrefixes(List<FileMapper> mappers) {
     if (stripprefixes != null)
       for (String prefix : stripprefixes) {
         mappers.add(new StripPrefixMapper(prefix));
