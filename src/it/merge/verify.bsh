@@ -1,0 +1,28 @@
+import java.io.File;
+
+String[] shouldNotExist = new String[]{
+  "target/shifty/MANIFEST.MF",
+  "target/shifty/CollectionCoercionDoesNotHaveAnAppriateMappingException.java",
+  "target/shifty/net/stickycode/coercion/CollectionCoercionDoesNotHaveAnAppriateMappingException.java",
+  "target/shifty/net/stickycode/coercion/StringCoercion.java"
+  };
+
+for ( target: shouldNotExist ) {
+	File file = new File( basedir, target );
+	System.out.println( "Check manifest file is not included: " + file );
+	if (file.exists())
+	  throw new RuntimeException(file.toString() + " should not be found" );
+}
+
+String[] shouldExist = new String[]{
+  "target/shifty/META-INF/MANIFEST.MF"
+  };
+
+for ( target: shouldExist ) {
+	File file = new File( basedir, target );
+	System.out.println( "Check manifest file is not included: " + file );
+	if (!file.exists())
+	  throw new RuntimeException(file.toString() + " should not" );
+}
+
+return true;
