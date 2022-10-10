@@ -86,6 +86,9 @@ public class ShiftyFetchMojo
 
   @Component
   private RepositorySystem repository;
+    
+  @Parameter(defaultValue = "true")
+  private Boolean parallelDownloads;
 
   @Parameter(defaultValue = "false")
   private Boolean includeSnapshots = false;
@@ -119,12 +122,21 @@ public class ShiftyFetchMojo
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
-    artifacts
-      .parallelStream()
-      .map(this::parseCoordinates)
-      .map(this::findArtifact)
-      .map(this::resolveArtifactRequest)
-      .forEach(this::copyArtifact);
+    if (parallelDownloads) {
+      artifacts
+        .parallelStream()
+        .map(this::parseCoordinates)
+        .map(this::findArtifact)
+        .map(this::resolveArtifactRequest)
+        .forEach(this::copyArtifact);
+    } else {
+      artifacts
+        .stream()
+        .map(this::parseCoordinates)
+        .map(this::findArtifact)
+        .map(this::resolveArtifactRequest)
+        .forEach(this::copyArtifact);
+    }
   }
 
   DefaultArtifact parseCoordinates(String gav) {
