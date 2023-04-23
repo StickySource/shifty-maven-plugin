@@ -63,6 +63,14 @@ public class ShiftyFetchMojoComponentTest {
     checkNoSnapshots("[5.6]", "5.6", "5.9", "5.6", "6.5", "6.10");
   }
 
+  @Test
+  public void checkSetProperties() {
+    ShiftyFetchMojo mojo = mojo(true, true, null, "1.2");
+    mojo.findArtifact(new DefaultArtifact("com.example:example:[1,2)")).getArtifact();
+    assertThat(mojo.getProjectProperties().get("example.version")).isEqualTo("1.2");
+    assertThat(mojo.getProjectProperties().get("example.contractVersion")).isEqualTo("1");
+  }
+
   private void checkSnapshots(String givenVersion, String expectation, String... resolvedVersions) {
     check(false, false, givenVersion, expectation, null, resolvedVersions);
   }
@@ -78,7 +86,15 @@ public class ShiftyFetchMojoComponentTest {
   private void check(boolean ignoreSnapshots, boolean assumingSnapshotsAreLocal, String givenVersion, String expectation,
       Exception exception,
       String... resolvedVersions) {
+    ShiftyFetchMojo mojo = mojo(ignoreSnapshots, assumingSnapshotsAreLocal, exception, resolvedVersions);
+    Artifact artifact = mojo.findArtifact(new DefaultArtifact("com.example:example:" + givenVersion)).getArtifact();
+    assertThat(artifact.getVersion()).isEqualTo(expectation);
+  }
+
+  private ShiftyFetchMojo mojo(boolean ignoreSnapshots, boolean assumingSnapshotsAreLocal, Exception exception,
+      String... resolvedVersions) {
     ShiftyFetchMojo mojo = new ShiftyFetchMojo() {
+      Properties p = new Properties();
 
       @Override
       VersionRangeResult resolveRangeRequest(VersionRangeRequest request) {
@@ -95,7 +111,7 @@ public class ShiftyFetchMojoComponentTest {
 
       @Override
       Properties getProjectProperties() {
-        return new Properties();
+        return p;
       }
 
       @Override
@@ -108,8 +124,7 @@ public class ShiftyFetchMojoComponentTest {
         return ignoreSnapshots;
       }
     };
-    Artifact artifact = mojo.findArtifact(new DefaultArtifact("com.example:example:" + givenVersion)).getArtifact();
-    assertThat(artifact.getVersion()).isEqualTo(expectation);
+    return mojo;
   }
 
 }
