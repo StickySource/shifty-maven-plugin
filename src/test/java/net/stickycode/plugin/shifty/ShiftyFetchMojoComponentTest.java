@@ -71,6 +71,14 @@ public class ShiftyFetchMojoComponentTest {
     assertThat(mojo.getProjectProperties().get("example.contractVersion")).isEqualTo("1");
   }
 
+  @Test
+  public void checkSetPropertiesWithSingleVersion() {
+    ShiftyFetchMojo mojo = mojo(true, true, null, "1");
+    mojo.findArtifact(new DefaultArtifact("com.example:example:[1,2)")).getArtifact();
+    assertThat(mojo.getProjectProperties().get("example.version")).isEqualTo("1");
+    assertThat(mojo.getProjectProperties().get("example.contractVersion")).isEqualTo("1");
+  }
+
   private void checkSnapshots(String givenVersion, String expectation, String... resolvedVersions) {
     check(false, false, givenVersion, expectation, null, resolvedVersions);
   }

@@ -154,7 +154,11 @@ public class ShiftyFetchMojo
 
   private void setContractVersion(Properties projectProperties, DefaultArtifact artifact, Version version) {
     String v = version.toString();
-    projectProperties.setProperty(artifact.getArtifactId() + ".contractVersion", v.substring(0, v.indexOf('.')));
+    int index = v.indexOf('.');
+    if (index == -1)
+      projectProperties.setProperty(artifact.getArtifactId() + ".contractVersion", v);
+    else
+      projectProperties.setProperty(artifact.getArtifactId() + ".contractVersion", v.substring(0, index));
   }
 
   Properties getProjectProperties() {
