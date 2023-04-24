@@ -9,7 +9,7 @@
 
   <groupId>net.stickycode.plugins</groupId>
   <artifactId>shifty-maven-plugin</artifactId>
-  <version>1.15</version>
+  <version>1.16-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>shifty-maven-plugin-1</name>
@@ -20,7 +20,7 @@
   <scm>
     <connection>${git.url}</connection>
     <developerConnection>${git.url}</developerConnection>
-    <tag>shifty-maven-plugin-1.15</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <prerequisites>
