@@ -140,6 +140,7 @@ public class ShiftyFetchMojo
     Version version = highestVersion(artifact);
     String propertyName = artifact.getArtifactId() + ".version";
     getProjectProperties().setProperty(propertyName, version.toString());
+    setContractVersion(getProjectProperties(), artifact, version);
     log("resolved %s to %s", artifact, version.toString());
 
     DefaultArtifact fetch = new DefaultArtifact(
@@ -149,6 +150,15 @@ public class ShiftyFetchMojo
       artifact.getExtension(),
       version.toString());
     return new ArtifactRequest(fetch, repositories, null);
+  }
+
+  private void setContractVersion(Properties projectProperties, DefaultArtifact artifact, Version version) {
+    String v = version.toString();
+    int index = v.indexOf('.');
+    if (index == -1)
+      projectProperties.setProperty(artifact.getArtifactId() + ".contractVersion", v);
+    else
+      projectProperties.setProperty(artifact.getArtifactId() + ".contractVersion", v.substring(0, index));
   }
 
   Properties getProjectProperties() {
