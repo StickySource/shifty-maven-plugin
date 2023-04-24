@@ -81,7 +81,7 @@
         <version>2.29</version>
         <configuration>
           <tiles>
-            <tile>net.stickycode.tile:sticky-tile-release:[1,2)</tile>
+            <tile>net.stickycode.tile:sticky-tile-release:[2,3)</tile>
           </tiles>
         </configuration>
       </plugin>
